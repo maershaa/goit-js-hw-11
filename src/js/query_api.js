@@ -34,7 +34,8 @@ async function getPhotos(userInput, currentPage = 1) {
 
       if (photoArr.hits !== photoArr.totalHits) {
         // Если есть еще изображения для загрузки, то показываем кнопку "Load more"
-        refs.loadMoreButton.style.display = 'block';
+        // refs.loadMoreButton.style.display = 'block';
+        refs.loadMoreButton.classList.remove('hidden');
       }
 
       // Вычисляем общее количество страниц с изображениями

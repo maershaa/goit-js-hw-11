@@ -79,7 +79,8 @@ async function onLoadMoreButtonClick(evt) {
 
   if (currentPage >= totalPages) {
     // refs.loadMoreButton.setAttribute('disabled', true);
-    refs.loadMoreButton.style.display = 'none';
+    // refs.loadMoreButton.style.display = 'none';
+    refs.loadMoreButton.classList.add('hidden');
   }
 
   const markup = createMarkup(hits);

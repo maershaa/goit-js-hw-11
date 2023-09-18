@@ -5,23 +5,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Page title</title>
+
+  <!-- Подключаем нормализатор -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/1.0.0/modern-normalize.min.css">
+
+
   <link rel="stylesheet" href="./style.css" />
 
   <link rel="stylesheet" href="./sass/index.scss" />
 </head>
 
 <body>
-  <form class="search-form" id="search-form">
-    <input type="text" name="searchQuery" autocomplete="off" placeholder="Search images..." />
-    <button type="submit" class="submit">Search</button>
-  </form>
+  <div class="container">
+    <form class="search-form" id="search-form">
+      <input type="text" name="searchQuery" autocomplete="off" placeholder="Search images..." />
+      <button type="submit" class="submit">Search</button>
+    </form>
 
-  <div class="gallery">
-    <!-- Карточки изображений -->
+    <div class="gallery">
+      <!-- Карточки изображений -->
+    </div>
+
+    <button type="button" class="load-more">Load more</button>
+
   </div>
-
-  <button type="button" class="load-more">Load more</button>
-
   <script src="index.js" type="module"></script>
 </body>
 
