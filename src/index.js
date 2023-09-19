@@ -1,13 +1,15 @@
-import axios from 'axios'; // Axios - библиотека для выполнения HTTP-запросов.
 import throttle from 'lodash.throttle'; // Lodash Throttle - библиотека для создания функций с задержкой выполнения.
 import Notiflix from 'notiflix'; // Notiflix - библиотека для создания уведомлений в веб-приложениях.
 import 'notiflix/dist/notiflix-3.2.6.min.css';
 
-import { BASE_URL, API_KEY, refs, totalPages, currentPage } from './js/refs';
+import { refs, totalPages } from './js/refs';
 import { createMarkup } from './js/markup';
 import { getPhotos } from './js/query_api';
+import { onImageClick } from './js/simpleLightbox';
 
-// refs.loadMoreButton.hidden = true;
+let currentPage = 1;
+
+refs.loadMoreButton.classList.add('hidden');
 refs.loadMoreButton.setAttribute('data-custom', 'custom-value');
 
 // Определение константы STORAGE_KEY для использования в локальном хранилище.
@@ -38,15 +40,21 @@ function onFormSubmit(evt) {
     return;
   } else {
     // Вызываем функцию getPhotos с пользовательским вводом.
-    getPhotos(userInput);
-    //   .then(data => console.log(data))
-
-    //   .catch(err => console.log(err));
-    // console.log(userInput);
+    getPhotos(userInput, currentPage);
 
     // Сбрасываем форму и удаляем данные из локального хранилища.
     // evt.currentTarget.reset();
     // localStorage.removeItem(STORAGE_KEY);
+
+    if (userInput !== '') {
+      clearGallery();
+    }
+  }
+}
+
+function clearGallery() {
+  while (refs.gallery.firstChild) {
+    refs.gallery.removeChild(refs.gallery.firstChild);
   }
 }
 
@@ -72,20 +80,23 @@ refs.loadMoreButton.addEventListener('click', onLoadMoreButtonClick);
 async function onLoadMoreButtonClick(evt) {
   evt.preventDefault();
 
-  const { currentPage, totalPages, hits } = await getPhotos(
-    userInput,
-    currentPage
-  );
+  // Обновляем значение currentPage после успешного выполнения запроса.
+  currentPage = currentPage + 1;
+
+  const { totalPages, hits } = await getPhotos(userInput, currentPage);
 
   if (currentPage >= totalPages) {
-    // refs.loadMoreButton.setAttribute('disabled', true);
-    // refs.loadMoreButton.style.display = 'none';
     refs.loadMoreButton.classList.add('hidden');
+    Notiflix.Notify.warning(
+      "We're sorry, but you've reached the end of search results."
+    );
   }
 
   const markup = createMarkup(hits);
   refs.gallery.innerHTML += markup;
 
-  // Обновляем значение currentPage после успешного выполнения запроса.
-  currentPage = currentPage + 1;
+  // Уничтожаем и повторно инициализируем Lightbox
+  lightbox.refresh();
 }
+
+refs.gallery.addEventListener('click', onImageClick);

@@ -3,7 +3,7 @@ function createMarkup(arr) {
     .map(
       ({
         webformatURL,
-        largeImageURL, // ссылка на большое изображение.
+        largeImageURL,
         tags,
         likes,
         views,
@@ -11,6 +11,7 @@ function createMarkup(arr) {
         downloads,
       }) => `
 <div class="photo-card">
+ <a class="link" href="${largeImageURL}">
   <img src="${webformatURL}" alt="${tags}" 
   loading="lazy" />
   <div class="info">
@@ -27,11 +28,10 @@ function createMarkup(arr) {
       <b>${downloads} Downloads</b>
     </p>
   </div>
+    </a>
 </div>`
     )
     .join('');
 }
 
 export { createMarkup };
-
-// width=600 height=380

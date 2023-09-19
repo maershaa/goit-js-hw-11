@@ -3,10 +3,12 @@ import throttle from 'lodash.throttle'; // Lodash Throttle - библиотек�
 import Notiflix from 'notiflix'; // Notiflix - библиотека для создания уведомлений в веб-приложениях.
 import 'notiflix/dist/notiflix-3.2.6.min.css';
 
-import { BASE_URL, API_KEY, refs, totalPages } from './refs';
+import { refs, totalPages } from './refs';
 import { createMarkup } from './markup';
 
-let currentPage = 1;
+const BASE_URL = 'https://pixabay.com/api/';
+
+const API_KEY = '39476118-a69449891a99ee741726132f7';
 
 // Функция getPhotos выполняет HTTP-запрос к API Pixabay на основе пользовательского ввода.
 async function getPhotos(userInput, currentPage = 1) {
@@ -18,7 +20,7 @@ async function getPhotos(userInput, currentPage = 1) {
     orientation: 'horizontal', // Ориентация изображений (горизонтальная)
     safesearch: 'true', // Фильтрация изображений с учетом безопасного поиска
     page: currentPage, // Номер текущей страницы
-    per_page: 20, // Количество изображений на странице
+    per_page: 40, // Количество изображений на странице
   });
 
   try {
@@ -30,21 +32,30 @@ async function getPhotos(userInput, currentPage = 1) {
       // Если найдены изображения, то создаем разметку и добавляем ее в галерею
       const markup = createMarkup(photoArr.hits);
       refs.gallery.innerHTML += markup;
-      console.log('photoArr.hits', photoArr.hits);
+
+      // console.log('photoArr.hits', photoArr.hits);
+      // console.log('photoArr.totalHits', photoArr.totalHits);
+
+      Notiflix.Notify.info(`Hooray! We found ${photoArr.totalHits} images.`);
 
       if (photoArr.hits !== photoArr.totalHits) {
         // Если есть еще изображения для загрузки, то показываем кнопку "Load more"
-        // refs.loadMoreButton.style.display = 'block';
         refs.loadMoreButton.classList.remove('hidden');
       }
 
+      if (userInput === '') {
+        currentPage = 1;
+      }
+
       // Вычисляем общее количество страниц с изображениями
-      const totalPages = Math.ceil(photoArr.totalHits / 20); // 20 - это количество элементов на странице, можете заменить на нужное
+      const totalPages = Math.ceil(photoArr.totalHits / 40); // 40 - это количество элементов на странице
 
       // Возвращаем информацию о текущей странице, общем количестве страниц и массиве изображений
       return { currentPage, totalPages, hits: photoArr.hits };
     } else {
-      console.log('No hits');
+      Notiflix.Notify.failure(
+        'Извините, нет изображений, соответствующих вашему запросу. Пожалуйста, попробуйте еще раз.'
+      );
     }
 
     // Очищаем поле ввода.
@@ -57,4 +68,5 @@ async function getPhotos(userInput, currentPage = 1) {
     );
   }
 }
+
 export { getPhotos };
