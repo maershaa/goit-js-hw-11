@@ -4,6 +4,7 @@ const refs = {
   searchButton: document.querySelector('.submit'),
   gallery: document.querySelector('.gallery'),
   loadMoreButton: document.querySelector('.load-more'),
+  scrollButton: document.querySelector('#scrollButton'),
 };
 export { refs };
 

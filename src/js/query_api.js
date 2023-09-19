@@ -41,6 +41,7 @@ async function getPhotos(userInput, currentPage = 1) {
       if (photoArr.hits !== photoArr.totalHits) {
         // Если есть еще изображения для загрузки, то показываем кнопку "Load more"
         refs.loadMoreButton.classList.remove('hidden');
+        refs.scrollButton.classList.remove('hidden');
       }
 
       if (userInput === '') {

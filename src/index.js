@@ -6,10 +6,14 @@ import { refs, totalPages } from './js/refs';
 import { createMarkup } from './js/markup';
 import { getPhotos } from './js/query_api';
 import { onImageClick } from './js/simpleLightbox';
+import { scrollPage } from './js/scroll.js';
 
 let currentPage = 1;
 
 refs.loadMoreButton.classList.add('hidden');
+refs.scrollButton.classList.add('hidden');
+
+// ЗАЧЕМ ОНО????? =============
 refs.loadMoreButton.setAttribute('data-custom', 'custom-value');
 
 // Определение константы STORAGE_KEY для использования в локальном хранилище.
@@ -100,3 +104,5 @@ async function onLoadMoreButtonClick(evt) {
 }
 
 refs.gallery.addEventListener('click', onImageClick);
+
+refs.scrollButton.addEventListener('click', scrollPage);
