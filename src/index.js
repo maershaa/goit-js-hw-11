@@ -56,6 +56,8 @@ async function onFormSubmit(evt) {
         const markup = createMarkup(photoArr.hits); // Создаем HTML-разметку из данных hits
         refs.gallery.innerHTML += markup; // Добавляем разметку в галерею
 
+        lightbox.refresh();
+
         // Выводим информацию о количестве найденных изображений
         Notiflix.Notify.info(`Hooray! We found ${photoArr.totalHits} images.`);
 
@@ -72,6 +74,12 @@ async function onFormSubmit(evt) {
         // Вычисляем общее количество страниц с изображениями
         const totalPages = Math.ceil(photoArr.totalHits / 40); // 40 - это количество элементов на странице
 
+        // ======= ДЛЯ infinityscroll Проверяем, загружены ли все доступные фотографии ================
+        if (currentPage >= totalPages) {
+          // Останавливаем наблюдение, если все доступные фотографии загружены
+          observer.unobserve(target);
+        }
+
         // Возвращаем информацию о текущей странице, общем количестве страниц и массиве изображений
         return { currentPage, totalPages, hits: photoArr.hits };
       }
@@ -82,8 +90,6 @@ async function onFormSubmit(evt) {
       );
     }
   }
-
-  lightbox.refresh(); // Обновляем Lightbox
 }
 
 function clearGallery() {
@@ -92,28 +98,61 @@ function clearGallery() {
   }
 }
 
-refs.loadMoreButton.addEventListener('click', onLoadMoreButtonClick);
+// ====================================================================================
+// =========  Реализация подгрузки фото через нажатие кнопки LoadMore =================
+// ====================================================================================
 
-async function onLoadMoreButtonClick(evt) {
-  evt.preventDefault();
+// refs.loadMoreButton.addEventListener('click', onLoadMoreButtonClick);
 
-  // Обновляем значение currentPage после успешного выполнения запроса.
-  currentPage = currentPage + 1;
+// async function onLoadMoreButtonClick(evt) {
+//   evt.preventDefault();
 
-  const { totalPages, hits } = await getPhotos(userInput, currentPage);
+//   // Обновляем значение currentPage после успешного выполнения запроса.
+//   currentPage = currentPage + 1;
 
-  if (currentPage >= totalPages) {
-    refs.loadMoreButton.classList.add('hidden');
-    Notiflix.Notify.warning(
-      "We're sorry, but you've reached the end of search results."
-    );
-  }
+//   const { totalPages, hits } = await getPhotos(userInput, currentPage);
 
-  const markup = createMarkup(hits);
-  refs.gallery.innerHTML += markup;
+//   if (currentPage >= totalPages) {
+//     refs.loadMoreButton.classList.add('hidden');
+//     Notiflix.Notify.warning(
+//       "We're sorry, but you've reached the end of search results."
+//     );
+//   }
 
-  // Уничтожаем и повторно инициализируем Lightbox
-  lightbox.refresh();
-}
+//   const markup = createMarkup(hits);
+//   refs.gallery.innerHTML += markup;
+
+//   // Уничтожаем и повторно инициализируем Lightbox
+//   lightbox.refresh();
+// }
 
 refs.scrollButton.addEventListener('click', scrollPage);
+
+// ====================================================================================
+// =========  Реализация подгрузки фото через infinity scroll ========================
+// ====================================================================================
+
+const target = document.querySelector('.infinityScroll-js');
+
+let options = {
+  root: null,
+  rootMargin: '300px',
+  threshold: 1.0,
+};
+
+let observer = new IntersectionObserver(onLoad, options);
+
+function onLoad(entries, observer) {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      currentPage += 1;
+      getPhotos(currentPage);
+      // Останавливаем наблюдение, если все доступные фотографии загружены  не тут (строка 78-81 0
+      // if (currentPage >= totalPages) {
+      // Останавливаем наблюдение, если все доступные фотографии загружены
+      // observer.unobserve(target);
+      // })
+    }
+  });
+}
+observer.observe(target);
