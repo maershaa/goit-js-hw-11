@@ -26,47 +26,15 @@ async function getPhotos(userInput, currentPage = 1) {
   try {
     // Выполняем HTTP GET-запрос к API Pixabay и получаем ответ
     const response = await axios.get(`${BASE_URL}?${params}`);
-    const photoArr = response.data;
-
-    if (parseInt(photoArr.totalHits) > 0) {
-      // Если найдены изображения, то создаем разметку и добавляем ее в галерею
-      const markup = createMarkup(photoArr.hits);
-      refs.gallery.innerHTML += markup;
-
-      // console.log('photoArr.hits', photoArr.hits);
-      // console.log('photoArr.totalHits', photoArr.totalHits);
-
-      Notiflix.Notify.info(`Hooray! We found ${photoArr.totalHits} images.`);
-
-      if (photoArr.hits !== photoArr.totalHits) {
-        // Если есть еще изображения для загрузки, то показываем кнопку "Load more"
-        refs.loadMoreButton.classList.remove('hidden');
-        refs.scrollButton.classList.remove('hidden');
-      }
-
-      if (userInput === '') {
-        currentPage = 1;
-      }
-
-      // Вычисляем общее количество страниц с изображениями
-      const totalPages = Math.ceil(photoArr.totalHits / 40); // 40 - это количество элементов на странице
-
-      // Возвращаем информацию о текущей странице, общем количестве страниц и массиве изображений
-      return { currentPage, totalPages, hits: photoArr.hits };
-    } else {
-      Notiflix.Notify.failure(
-        'Извините, нет изображений, соответствующих вашему запросу. Пожалуйста, попробуйте еще раз.'
-      );
-    }
-
-    // Очищаем поле ввода.
-    refs.input.value = '';
+    return response.data; // Возвращаем данные изображений
   } catch (error) {
     // Обрабатываем ошибку и выводим уведомление об ошибке с помощью Notiflix.
     console.error(error);
     Notiflix.Notify.failure(
       'Извините, нет изображений, соответствующих вашему запросу. Пожалуйста, попробуйте еще раз.'
     );
+    // Очищаем поле ввода.
+    refs.input.value = '';
   }
 }
 

@@ -2,10 +2,14 @@ import throttle from 'lodash.throttle'; // Lodash Throttle - библиотек�
 import Notiflix from 'notiflix'; // Notiflix - библиотека для создания уведомлений в веб-приложениях.
 import 'notiflix/dist/notiflix-3.2.6.min.css';
 
+import SimpleLightbox from 'simplelightbox';
+// Дополнительный импорт стилей
+import 'simplelightbox/dist/simple-lightbox.min.css';
+
 import { refs, totalPages } from './js/refs';
 import { createMarkup } from './js/markup';
 import { getPhotos } from './js/query_api';
-import { onImageClick } from './js/simpleLightbox';
+
 import { scrollPage } from './js/scroll.js';
 
 let currentPage = 1;
@@ -13,14 +17,14 @@ let currentPage = 1;
 refs.loadMoreButton.classList.add('hidden');
 refs.scrollButton.classList.add('hidden');
 
+const lightbox = new SimpleLightbox('.gallery a', {
+  sourceAttr: 'href',
+  captionsData: 'alt',
+  captionsDelay: 250,
+});
+
 // ЗАЧЕМ ОНО????? =============
 refs.loadMoreButton.setAttribute('data-custom', 'custom-value');
-
-// Определение константы STORAGE_KEY для использования в локальном хранилище.
-const STORAGE_KEY = 'feedback-data';
-
-// Создаем объект formData для хранения данных формы.
-let formData = {};
 
 // Получаем текущее значение поля ввода и записываем его в userInput.
 let userInput = refs.input.value;
@@ -28,55 +32,64 @@ let userInput = refs.input.value;
 // Добавляем слушателя события отправки формы.
 refs.searchForm.addEventListener('submit', onFormSubmit);
 
-// Добавляем слушателя события ввода с задержкой для поля ввода.
-refs.input.addEventListener('input', throttle(onInput, 500));
-
 // Функция onFormSubmit вызывается при отправке формы.
-function onFormSubmit(evt) {
+async function onFormSubmit(evt) {
   evt.preventDefault();
 
   // Получаем текущее значение поля ввода и записываем его в userInput.
   userInput = refs.input.value;
-
   // Проверяем, заполнено ли поле ввода, и выводим информационное уведомление, если оно пустое.
   if (refs.input.value === '') {
     Notiflix.Notify.info('Пожалуйста, заполните все поля!');
-    return;
+    return; // Возвращаемся из функции, так как поле пустое
   } else {
-    // Вызываем функцию getPhotos с пользовательским вводом.
-    getPhotos(userInput, currentPage);
+    try {
+      const photoArr = await getPhotos(userInput, 1);
+      // Получаем данные изображений и сохраняем в переменные
 
-    // Сбрасываем форму и удаляем данные из локального хранилища.
-    // evt.currentTarget.reset();
-    // localStorage.removeItem(STORAGE_KEY);
+      if (userInput !== '') {
+        clearGallery(); // Очищаем галерею
+      }
 
-    if (userInput !== '') {
-      clearGallery();
+      if (parseInt(photoArr.totalHits) > 0) {
+        // Если найдены изображения, то создаем разметку и добавляем ее в галерею
+        const markup = createMarkup(photoArr.hits); // Создаем HTML-разметку из данных hits
+        refs.gallery.innerHTML += markup; // Добавляем разметку в галерею
+
+        // Выводим информацию о количестве найденных изображений
+        Notiflix.Notify.info(`Hooray! We found ${photoArr.totalHits} images.`);
+
+        if (photoArr.hits !== photoArr.totalHits) {
+          // Если есть еще изображения для загрузки, то показываем кнопку "Load more"
+          refs.loadMoreButton.classList.remove('hidden'); // Показываем кнопку "Load more"
+          refs.scrollButton.classList.remove('hidden'); // Показываем кнопку прокрутки
+        }
+
+        if (userInput === '') {
+          currentPage = 1;
+        }
+
+        // Вычисляем общее количество страниц с изображениями
+        const totalPages = Math.ceil(photoArr.totalHits / 40); // 40 - это количество элементов на странице
+
+        // Возвращаем информацию о текущей странице, общем количестве страниц и массиве изображений
+        return { currentPage, totalPages, hits: photoArr.hits };
+      }
+    } catch (error) {
+      console.error(error); // Выводим ошибку в консоль
+      Notiflix.Notify.failure(
+        'Извините, нет изображений, соответствующих вашему запросу. Пожалуйста, попробуйте еще раз.'
+      );
     }
   }
+
+  lightbox.refresh(); // Обновляем Lightbox
 }
 
 function clearGallery() {
   while (refs.gallery.firstChild) {
     refs.gallery.removeChild(refs.gallery.firstChild);
   }
-}
-
-// Функция onInput вызывается при вводе данных в поле формы.
-function onInput(evt) {
-  const fieldName = evt.target.getAttribute('name');
-  userInput = evt.target.value; // Обновляем userInput
-  formData[fieldName] = userInput; // Записываем значения ввода в объект formData
-  // Записываем значения ввода в объект formData.
-  formData[fieldName] = evt.target.value;
-
-  // Сохраняем данные в локальном хранилище.
-  saveDataToLocalStorage();
-}
-
-// Функция saveDataToLocalStorage сохраняет данные из объекта formData в локальном хранилище.
-function saveDataToLocalStorage() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
 }
 
 refs.loadMoreButton.addEventListener('click', onLoadMoreButtonClick);
@@ -102,7 +115,5 @@ async function onLoadMoreButtonClick(evt) {
   // Уничтожаем и повторно инициализируем Lightbox
   lightbox.refresh();
 }
-
-refs.gallery.addEventListener('click', onImageClick);
 
 refs.scrollButton.addEventListener('click', scrollPage);
