@@ -33,6 +33,8 @@ async function getPhotos(userInput, currentPage = 1) {
     Notiflix.Notify.failure(
       'Извините, нет изображений, соответствующих вашему запросу. Пожалуйста, попробуйте еще раз.'
     );
+    refs.loadMoreButton.classList.add('hidden'); // убираем кнопку "Load more"
+
     // Очищаем поле ввода.
     refs.input.value = '';
   }
