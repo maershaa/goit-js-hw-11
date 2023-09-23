@@ -14,7 +14,6 @@ import { scrollPage } from './js/scroll.js';
 
 let currentPage = 1;
 let perPage = 40; // Количество элементов (изображений) на странице.
-let totalImagesLoaded = 0; // Счетчик загруженных изображений.
 
 refs.loadMoreButton.classList.add('hidden');
 refs.scrollButton.classList.add('hidden');
@@ -58,6 +57,9 @@ async function onFormSubmit(evt) {
         const markup = createMarkup(photoArr.hits); // Создаем HTML-разметку из данных hits
         refs.gallery.innerHTML += markup; // Добавляем разметку в галерею
 
+        // Запускаем наблюдение для infinityscroll, если все доступные фотографии загружены
+        observer.observe(target);
+
         lightbox.refresh();
 
         // Выводим информацию о количестве найденных изображений
@@ -65,7 +67,7 @@ async function onFormSubmit(evt) {
 
         if (photoArr.hits !== photoArr.totalHits) {
           // Если есть еще изображения для загрузки, то показываем кнопку "Load more"
-          refs.loadMoreButton.classList.remove('hidden'); // Показываем кнопку "Load more"
+          // refs.loadMoreButton.classList.remove('hidden'); // Показываем кнопку "Load more"
           refs.scrollButton.classList.remove('hidden'); // Показываем кнопку прокрутки
         }
 
@@ -78,10 +80,10 @@ async function onFormSubmit(evt) {
 
         // ======= ДЛЯ infinityscroll Проверяем, загружены ли все доступные фотографии ================
         if (currentPage >= totalPages) {
-          // Останавливаем наблюдение, если все доступные фотографии загружены
-          // observer.unobserve(target);
+          // Останавливаем наблюдение для infinityscroll, если все доступные фотографии загружены
+          observer.unobserve(target);
 
-          refs.loadMoreButton.classList.add('hidden'); // убираем кнопку "Load more"
+          // refs.loadMoreButton.classList.add('hidden'); // убираем кнопку "Load more"
         }
 
         // Возвращаем информацию о текущей странице, общем количестве страниц и массиве изображений
@@ -111,36 +113,36 @@ function clearGallery() {
 // =========  Реализация подгрузки фото через нажатие кнопки LoadMore =================
 // ====================================================================================
 
-refs.loadMoreButton.addEventListener('click', onLoadMoreButtonClick);
+// refs.loadMoreButton.addEventListener('click', onLoadMoreButtonClick);
 
-async function onLoadMoreButtonClick(evt) {
-  evt.preventDefault();
+// async function onLoadMoreButtonClick(evt) {
+//   evt.preventDefault();
 
-  // Обновляем значение currentPage после успешного выполнения запроса.
-  currentPage = currentPage + 1;
+//   // Обновляем значение currentPage после успешного выполнения запроса.
+//   currentPage = currentPage + 1;
 
-  const { totalPages, hits } = await getPhotos(userInput, currentPage);
+//   const { totalPages, hits } = await getPhotos(userInput, currentPage);
 
-  // if (currentPage >= totalPages) {
-  //   refs.loadMoreButton.classList.add('hidden');
-  //   Notiflix.Notify.warning(
-  //     "We're sorry, but you've reached the end of search results."
-  //   );
-  // }
+//   // if (currentPage >= totalPages) {
+//   //   refs.loadMoreButton.classList.add('hidden');
+//   //   Notiflix.Notify.warning(
+//   //     "We're sorry, but you've reached the end of search results."
+//   //   );
+//   // }
 
-  if (hits.length === 0) {
-    // Если API не вернуло больше изображений, то скрываем кнопку "Load More".
-    refs.loadMoreButton.classList.add('hidden');
-    Notiflix.Notify.warning(
-      "We're sorry, but you've reached the end of search results."
-    );
-  }
-  const markup = createMarkup(hits);
-  refs.gallery.innerHTML += markup;
+//   if (hits.length === 0) {
+//     // Если API не вернуло больше изображений, то скрываем кнопку "Load More".
+//     refs.loadMoreButton.classList.add('hidden');
+//     Notiflix.Notify.warning(
+//       "We're sorry, but you've reached the end of search results."
+//     );
+//   }
+//   const markup = createMarkup(hits);
+//   refs.gallery.innerHTML += markup;
 
-  // Уничтожаем и повторно инициализируем Lightbox
-  lightbox.refresh();
-}
+//   // Уничтожаем и повторно инициализируем Lightbox
+//   lightbox.refresh();
+// }
 
 refs.scrollButton.addEventListener('click', scrollPage);
 
@@ -148,22 +150,31 @@ refs.scrollButton.addEventListener('click', scrollPage);
 // =========  Реализация подгрузки фото через infinity scroll ========================
 // ====================================================================================
 
-// const target = document.querySelector('.infinityScroll-js');
+const target = document.querySelector('.infinityScroll-js');
 
-// let options = {
-//   root: null,
-//   rootMargin: '300px',
-//   threshold: 1.0,
-// };
+let options = {
+  root: null,
+  rootMargin: '300px',
+  threshold: 1.0,
+};
 
-// let observer = new IntersectionObserver(onLoad, options);
+let observer = new IntersectionObserver(onLoad, options);
 
-// function onLoad(entries, observer) {
-//   entries.forEach(entry => {
-//     if (entry.isIntersecting) {
-//       currentPage += 1;
-//       getPhotos(currentPage);
-//     }
-//   });
-// }
-// observer.observe(target);
+async function onLoad(entries, observer) {
+  entries.forEach(async entry => {
+    if (entry.isIntersecting) {
+      currentPage += 1;
+      try {
+        const { hits } = await getPhotos(userInput, currentPage); // Вызываем функцию для загрузки данных
+        // Обновляем галерею с новыми данными
+        const markup = createMarkup(hits);
+        refs.gallery.innerHTML += markup;
+        // Уничтожаем и повторно инициализируем Lightbox
+        lightbox.refresh();
+      } catch (error) {
+        console.error(error);
+        Notiflix.Notify.failure('Failed to load more photos');
+      }
+    }
+  });
+}
