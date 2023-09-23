@@ -105,7 +105,9 @@ input {
   max-height: 100%; /* Максимальная высота изображения */
 }
 
-button {
+.submit,
+.scroll-button,
+.load-more {
   cursor: pointer;
 
   background-color: #3b428a;

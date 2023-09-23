@@ -14,6 +14,7 @@ import { scrollPage } from './js/scroll.js';
 
 let currentPage = 1;
 let perPage = 40; // Количество элементов (изображений) на странице.
+let totalImagesLoaded = 0; // Счетчик загруженных изображений.
 
 refs.loadMoreButton.classList.add('hidden');
 refs.scrollButton.classList.add('hidden');
@@ -40,7 +41,7 @@ async function onFormSubmit(evt) {
   // Получаем текущее значение поля ввода и записываем его в userInput.
   userInput = refs.input.value.trim(); // Убираем начальные и конечные пробелы.
   // Проверяем, заполнено ли поле ввода, и выводим информационное уведомление, если оно пустое.
-  if (refs.input.value === '') {
+  if (userInput === '') {
     Notiflix.Notify.info('Пожалуйста, заполните все поля!');
     return; // Возвращаемся из функции, так как поле пустое
   } else {
@@ -87,7 +88,9 @@ async function onFormSubmit(evt) {
         return { currentPage, totalPages, hits: photoArr.hits };
       } else {
         // Если фотографий для загрузки больше нет, скрываем кнопку
-        loadMoreButton.classList.add('hidden');
+
+        refs.loadMoreButton.classList.add('hidden');
+
         Notiflix.Notify.info('No more images to load.');
       }
     } catch (error) {
@@ -118,13 +121,20 @@ async function onLoadMoreButtonClick(evt) {
 
   const { totalPages, hits } = await getPhotos(userInput, currentPage);
 
-  if (currentPage >= totalPages) {
+  // if (currentPage >= totalPages) {
+  //   refs.loadMoreButton.classList.add('hidden');
+  //   Notiflix.Notify.warning(
+  //     "We're sorry, but you've reached the end of search results."
+  //   );
+  // }
+
+  if (hits.length === 0) {
+    // Если API не вернуло больше изображений, то скрываем кнопку "Load More".
     refs.loadMoreButton.classList.add('hidden');
     Notiflix.Notify.warning(
       "We're sorry, but you've reached the end of search results."
     );
   }
-
   const markup = createMarkup(hits);
   refs.gallery.innerHTML += markup;
 
