@@ -3,7 +3,7 @@ import throttle from 'lodash.throttle'; // Lodash Throttle - библиотек�
 import Notiflix from 'notiflix'; // Notiflix - библиотека для создания уведомлений в веб-приложениях.
 import 'notiflix/dist/notiflix-3.2.6.min.css';
 
-import { refs, totalPages } from './refs';
+import { refs } from './refs';
 import { createMarkup } from './markup';
 
 const BASE_URL = 'https://pixabay.com/api/';

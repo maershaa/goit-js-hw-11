@@ -17,6 +17,7 @@ import { scrollPage } from './js/scroll.js';
 // Инициализация переменных
 let currentPage = 1;
 let perPage = 40; // Количество элементов (изображений) на странице.
+let totalPages = 0;
 
 // Скрываем кнопки "Load more" и "Scroll" по умолчанию
 refs.loadMoreButton.classList.add('hidden');
@@ -63,6 +64,9 @@ async function onFormSubmit(evt) {
         const markup = createMarkup(photoArr.hits); // Создаем HTML-разметку из данных hits
         refs.gallery.innerHTML += markup; // Добавляем разметку в галерею
 
+        // Запускаем наблюдение для infinityscroll, если все доступные фотографии загружены
+        observer.observe(target);
+
         // Обновляем Lightbox, чтобы учесть новые элементы
         lightbox.refresh();
 
@@ -80,13 +84,12 @@ async function onFormSubmit(evt) {
         }
 
         // Вычисляем общее количество страниц с изображениями
-        const totalPages = Math.ceil(photoArr.totalHits / perPage); // perPage - это количество элементов на странице
+        totalPages = Math.ceil(photoArr.totalHits / perPage); // perPage - это количество элементов на странице
 
-        // Если загруженные изображения меньше общего числа, показываем кнопку "Load more"
-        if (currentPage <= totalPages) {
-          refs.loadMoreButton.classList.remove('hidden');
-        } else {
-          refs.loadMoreButton.classList.add('hidden');
+        // ======= ДЛЯ infinityscroll Проверяем, загружены ли все доступные фотографии ================
+        if (currentPage >= totalPages) {
+          // Останавливаем наблюдение для infinityscroll, если все доступные фотографии загружены
+          observer.unobserve(target);
         }
 
         // Возвращаем информацию о текущей странице, общем количестве страниц и массиве изображений
@@ -117,42 +120,46 @@ function clearGallery() {
 refs.scrollButton.addEventListener('click', scrollPage);
 
 // ====================================================================================
-// =========  Реализация подгрузки фото через нажатие кнопки LoadMore =================
+// =========  Реализация подгрузки фото через infinity scroll ========================
 // ====================================================================================
 
-// Добавляем слушателя события для кнопки "Load more"
-refs.loadMoreButton.addEventListener('click', onLoadMoreButtonClick);
+const target = document.querySelector('.infinityScroll-js');
 
-async function onLoadMoreButtonClick(evt) {
-  evt.preventDefault();
+let options = {
+  root: null,
+  rootMargin: '300px',
+  threshold: 1.0,
+};
 
-  // Обновляем значение currentPage после успешного выполнения запроса.
-  currentPage = currentPage + 1;
+let observer = new IntersectionObserver(onLoad, options);
 
-  // Запрашиваем данные для следующей страницы изображений
-  const { totalPages, hits } = await getPhotos(userInput, currentPage);
+async function onLoad(entries, observer) {
+  entries.forEach(async entry => {
+    // Проверяем, видим ли элемент
+    if (entry.isIntersecting) {
+      // Увеличиваем текущую страницу
+      currentPage += 1;
 
-  // Проверяем, достигнут ли конец результатов поиска
-  if (currentPage >= totalPages) {
-    // Если достигнут конец, скрываем кнопку "Load more" и выводим уведомление
-    refs.loadMoreButton.classList.add('hidden');
-    Notiflix.Notify.warning(
-      "We're sorry, but you've reached the end of search results."
-    );
-  }
+      // Проверяем, есть ли еще страницы для загрузки
+      if (currentPage < totalPages) {
+        try {
+          // Загружаем данные для следующей страницы
+          const { hits } = await getPhotos(userInput, currentPage);
 
-  // Если API не вернуло больше изображений, скрываем кнопку "Load More" и выводим уведомление
-  if (hits.length === 0) {
-    refs.loadMoreButton.classList.add('hidden');
-    Notiflix.Notify.warning(
-      "We're sorry, but you've reached the end of search results."
-    );
-  }
+          // Создаем HTML-разметку на основе загруженных данных
+          const markup = createMarkup(hits);
 
-  // Создаем разметку для новых изображений и добавляем ее в галерею
-  const markup = createMarkup(hits);
-  refs.gallery.innerHTML += markup;
+          // Добавляем разметку в галерею
+          refs.gallery.innerHTML += markup;
 
-  // Уничтожаем и повторно инициализируем Lightbox для новых элементов
-  lightbox.refresh();
+          // Обновляем Lightbox, чтобы учесть новые элементы
+          lightbox.refresh();
+        } catch (error) {
+          // В случае ошибки выводим уведомление
+          console.error(error);
+          Notiflix.Notify.failure('Failed to load more photos');
+        }
+      }
+    }
+  });
 }
